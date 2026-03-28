@@ -15,6 +15,14 @@
   --purple:#a78bfa;--orange:#fb923c;
   --r:10px;--shadow:0 2px 8px rgba(0,0,0,.4);
 }
+html.light-mode:root{
+  --bg:#b1d4f0;--surface:#ffffff;--surface2:#deeaee;--surface3:#030108;
+  --border:#6db6cc;--border2:#6fbf99;
+  --text:#000a05;--text2:#000a05;--text3:#000a05;
+  --accent:#7e98ee;--accent2:#0533c9;
+  --green:#008060;--gold:#b8860b;--red:#c71a3a;
+  --purple:#6a4c93;--orange:#d97706;
+}
 *{margin:0;padding:0;box-sizing:border-box;}
 html{font-size:14px;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
@@ -40,7 +48,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
 .nav-brand{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;}
 .nav-brand span{color:var(--accent);}
 .nav-tag{font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;
-  font-family:'JetBrains Mono',monospace;margin-top:1px;}
+  font-family:'JetBrains Mono',monospace;margin-top:1px;animation:pulse-tag .6s ease-in-out infinite;}
+@keyframes pulse-tag{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.7;transform:scale(1.05)}}
 .topbar-mid{display:flex;align-items:center;gap:8px;}
 .scan-pill{display:flex;align-items:center;gap:7px;background:var(--surface2);
   border:1px solid var(--border);border-radius:20px;padding:5px 12px;
@@ -66,6 +75,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
 .btn-red{background:rgba(255,77,106,.08);border-color:rgba(255,77,106,.25);color:var(--red);}
 .home-link{font-size:11px;color:var(--text3);text-decoration:none;font-family:'JetBrains Mono',monospace;}
 .home-link:hover{color:var(--accent);}
+.theme-toggle{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:1px solid var(--border);border-radius:8px;background:var(--surface2);cursor:pointer;
+  color:var(--text2);transition:all .2s;padding:0;font-size:16px;}
+.theme-toggle:hover{border-color:var(--border2);color:var(--text);background:var(--surface3);}
 
 /* SCANNER INFO BAR */
 .scanner-bar{
@@ -295,6 +308,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
     <button class="btn btn-green" onclick="exportCSV()">↓ CSV</button>
     <a class="btn" href="scanner-builder.html">🛠 Builder</a>
     <a class="btn" href="my-scanners.html">📋 Scanners</a>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode" id="themeBtn">🌙</button>
     <a class="home-link" href="index.html">← Home</a>
   </div>
 </div>
@@ -460,6 +474,33 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
 
 <script>
 // ═══════════════════════════════════════════════════════════════
+// THEME TOGGLE
+// ═══════════════════════════════════════════════════════════════
+function initTheme(){
+  const saved=localStorage.getItem('aks_theme')||'dark';
+  applyTheme(saved);
+}
+function toggleTheme(){
+  const current=document.documentElement.classList.contains('light-mode')?'light':'dark';
+  const next=current==='dark'?'light':'dark';
+  applyTheme(next);
+  localStorage.setItem('aks_theme',next);
+}
+function applyTheme(mode){
+  const html=document.documentElement;
+  const btn=document.getElementById('themeBtn');
+  if(mode==='light'){
+    html.classList.add('light-mode');
+    btn.textContent='☀️';
+    btn.title='Switch to Dark Mode';
+  }else{
+    html.classList.remove('light-mode');
+    btn.textContent='🌙';
+    btn.title='Switch to Light Mode';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════════════════════
 const API = 'http://localhost:5000/api';
@@ -472,6 +513,12 @@ let isDragging=false, dragStart=0, viewStart=0, viewLen=80;
 let cCanvas,oCanvas,cCtx,oCtx,vCanvas,vCtx;
 let pollTimer=null;
 let activeScannerCfg = null; // scanner config loaded from localStorage
+
+// ── Init on page load ──────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  initTheme();
+  loadScannerFromURL(); initDate(); initCanvas();
+});
 
 // ── Canvas refs ───────────────────────────────────────────────
 function initCanvas(){
