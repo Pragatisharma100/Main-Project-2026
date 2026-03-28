@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKS Wealthply — VCP Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050a14;--surface:#0c1524;--surface2:#111e30;--accent:#00d4ff;--green:#00e5a0;--gold:#f5b800;
+}
+* {margin:0;padding:0;box-sizing:border-box;}
+body {background:var(--bg);color:#f0f6ff;font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.hero {text-align:center;max-width:800px;padding:40px 20px;}
+.logo {width:120px;height:120px;background:linear-gradient(135deg,#00d4ff,#0ea5e9,#00e5a0);border-radius:20px;margin:0 auto 30px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(0,212,255,.4);}
+.logo svg {width:60px;height:60px;}
+h1 {font-family:'Syne',sans-serif;font-size:48px;font-weight:800;margin-bottom:16px;}
+.tagline {font-size:22px;color:#8fa8c4;margin-bottom:40px;}
+.cards {display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;width:100%;max-width:1000px;margin-top:40px;}
+.card {background:var(--surface);border:1px solid #1a2d46;border-radius:16px;padding:28px 24px;transition:.3s;cursor:pointer;}
+.card:hover {transform:translateY(-8px);border-color:var(--accent);box-shadow:0 10px 30px rgba(0,212,255,.15);}
+.card h3 {font-family:'Syne',sans-serif;font-size:22px;margin-bottom:12px;color:var(--accent);}
+.btn {display:inline-block;margin-top:20px;padding:12px 28px;background:linear-gradient(135deg,var(--accent),#0ea5e9);color:#050a14;font-weight:700;border-radius:8px;text-decoration:none;font-size:15px;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#050a14" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+    </svg>
+  </div>
+  <h1>AKS <span style="color:#00d4ff;">Wealthply</span></h1>
+  <p class="tagline">Volatility Contraction Pattern (VCP) Scanner<br>Powered by Mark Minervini-inspired logic + yfinance</p>
+  
+  <div class="cards">
+    <div class="card" onclick="window.location='scanner.html'">
+      <h3>🚀 Live Scanner</h3>
+      <p>Run custom VCP scans on your watchlist with live progress and beautiful charts.</p>
+    </div>
+    <div class="card" onclick="window.location='scanner-builder.html'">
+      <h3>🛠 Scanner Builder</h3>
+      <p>Create and save your own VCP scanners with custom conditions and thresholds.</p>
+    </div>
+    <div class="card" onclick="window.location='my-scanners.html'">
+      <h3>📋 My Scanners</h3>
+      <p>Manage, edit, and load your saved scanners.</p>
+    </div>
+  </div>
+
+  <a href="scanner.html" class="btn">Launch Scanner Now →</a>
+</div>
+
+<script>
+// Quick demo scanner if none exists
+if(!localStorage.getItem('aks_scanners')){
+  localStorage.setItem('aks_scanners', JSON.stringify([{
+    id: "default",
+    name: "Default VCP Scanner",
+    minScore: 2,
+    conditions: {
+      uptrend: {active: true},
+      atr: {active: true, threshold: 80},
+      vol: {active: true, threshold: 80},
+      range: {active: true, threshold: 75},
+      pivot: {active: false, threshold: 10},
+      "52w": {active: false, threshold: 20}
+    },
+    watchlist: ["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "SBIN", "AXISBANK"]
+  }]));
+}
+</script>
+</body>
+</html>

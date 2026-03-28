@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKS Wealthply — Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050a14;--surface:#0c1524;--surface2:#111e30;--surface3:#0f192a;
+  --border:#1a2d46;--border2:#243b58;
+  --text:#f0f6ff;--text2:#8fa8c4;--text3:#4d6a89;
+  --accent:#00d4ff;--accent2:#0ea5e9;
+  --green:#00e5a0;--gold:#f5b800;--red:#ff4d6a;
+  --purple:#a78bfa;--orange:#fb923c;
+  --r:10px;--shadow:0 2px 8px rgba(0,0,0,.4);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{font-size:14px;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
+  display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+
+/* TOPBAR */
+.topbar{height:54px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;position:sticky;top:0;z-index:200;box-shadow:0 2px 20px rgba(0,0,0,.4);}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.logo-icon{width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,#00d4ff,#0ea5e9,#00e5a0);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 16px rgba(0,212,255,.25);}
+.logo-icon svg{width:17px;height:17px;}
+.nav-brand{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;}
+.nav-brand span{color:var(--accent);}
+.nav-tag{font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;
+  font-family:'JetBrains Mono',monospace;margin-top:1px;}
+.topbar-mid{display:flex;align-items:center;gap:8px;}
+.scan-pill{display:flex;align-items:center;gap:7px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:20px;padding:5px 12px;
+  font-size:11px;color:var(--text2);font-family:'JetBrains Mono',monospace;}
+.sdot{width:6px;height:6px;border-radius:50%;}
+.sdot.idle{background:var(--text3);}
+.sdot.running{background:var(--accent);animation:pulse .8s infinite;}
+.sdot.done{background:var(--green);}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:8px;
+  border:1px solid var(--border);background:var(--surface2);color:var(--text2);
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;
+  cursor:pointer;transition:all .15s;text-decoration:none;white-space:nowrap;}
+.btn:hover{border-color:var(--border2);color:var(--text);background:var(--surface3);}
+.btn:disabled{opacity:.45;pointer-events:none;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-color:transparent;color:#050a14;font-weight:700;}
+.btn-primary:hover{box-shadow:0 4px 16px rgba(0,212,255,.35);color:#050a14;}
+.btn-green{background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.3);color:var(--green);font-weight:600;}
+.btn-gold{background:rgba(245,184,0,.1);border-color:rgba(245,184,0,.3);color:var(--gold);}
+.btn-red{background:rgba(255,77,106,.08);border-color:rgba(255,77,106,.25);color:var(--red);}
+.home-link{font-size:11px;color:var(--text3);text-decoration:none;font-family:'JetBrains Mono',monospace;}
+.home-link:hover{color:var(--accent);}
+
+/* SCANNER INFO BAR */
+.scanner-bar{
+  background:linear-gradient(90deg,rgba(0,212,255,.04),rgba(0,229,160,.02));
+  border-bottom:1px solid rgba(0,212,255,.15);
+  padding:7px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.sbar-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--accent);}
+.sbar-pill{font-size:10px;font-family:'JetBrains Mono',monospace;
+  background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);
+  color:var(--text2);padding:2px 8px;border-radius:4px;}
+.sbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+
+/* BACKTEST DATE BAR */
+.date-bar{background:rgba(245,184,0,.04);border-bottom:1px solid rgba(245,184,0,.15);
+  padding:7px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.date-lbl{font-size:10px;font-weight:700;color:var(--gold);font-family:'JetBrains Mono',monospace;
+  letter-spacing:1px;text-transform:uppercase;}
+.date-input{padding:5px 10px;border:1px solid var(--border2);border-radius:7px;
+  font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text);
+  background:var(--surface2);outline:none;color-scheme:dark;}
+.date-input:focus{border-color:var(--gold);}
+
+/* MAIN */
+.main{padding:14px 16px;flex:1;display:flex;flex-direction:column;gap:12px;}
+
+/* STATS */
+.stats-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;animation:fadeUp .4s both;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 14px;position:relative;overflow:hidden;cursor:default;}
+.stat-bar{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:var(--r) 0 0 var(--r);}
+.stat:nth-child(1) .stat-bar{background:var(--accent);}
+.stat:nth-child(2) .stat-bar{background:var(--green);}
+.stat:nth-child(3) .stat-bar{background:var(--gold);}
+.stat:nth-child(4) .stat-bar{background:var(--purple);}
+.stat:nth-child(5) .stat-bar{background:var(--orange);}
+.stat-l{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;
+  font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.stat-v{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text);transition:.3s;}
+.stat-s{font-size:10px;color:var(--text3);margin-top:2px;}
+.stat-v.flash{color:var(--accent);}
+
+/* PROGRESS */
+.prog-box{background:var(--surface);border:1px solid var(--gold);border-radius:var(--r);
+  padding:12px 16px;display:none;}
+.prog-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.prog-lbl{font-weight:600;color:var(--gold);font-size:12px;font-family:'JetBrains Mono',monospace;}
+.prog-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);}
+.prog-track{background:var(--surface2);border-radius:3px;height:4px;margin-bottom:8px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--green));width:0%;transition:width .3s;}
+.prog-log{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);
+  max-height:80px;overflow-y:auto;line-height:1.9;}
+.pl-hit{color:var(--green)!important;font-weight:600;}
+.pl-err{color:var(--red)!important;}
+
+/* FILTERS */
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.flbl{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;}
+.ftab{padding:5px 12px;border-radius:14px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text2);font-size:11px;cursor:pointer;transition:.12s;}
+.ftab:hover{border-color:var(--border2);color:var(--text);}
+.ftab.on{background:rgba(0,212,255,.12);border-color:rgba(0,212,255,.4);color:var(--accent);font-weight:600;}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:340px 1fr;gap:12px;align-items:start;}
+
+/* STOCK LIST */
+.list-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);}
+.list-head{padding:10px 12px;border-bottom:1px solid var(--border);
+  background:var(--surface2);display:flex;align-items:center;justify-content:space-between;}
+.list-title{font-family:'Syne',sans-serif;font-weight:700;font-size:12px;}
+.list-cnt{background:rgba(0,212,255,.1);color:var(--accent);border-radius:5px;
+  padding:2px 8px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.list-search{padding:7px 10px;border-bottom:1px solid var(--border);}
+.sinput{width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:7px;
+  font-size:11px;color:var(--text);outline:none;background:var(--surface2);}
+.sinput:focus{border-color:var(--accent);}
+.sinput::placeholder{color:var(--text3);}
+.stock-list{max-height:640px;overflow-y:auto;}
+.srow{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.03);
+  cursor:pointer;transition:background .1s;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.srow:hover{background:rgba(255,255,255,.03);}
+.srow.on{background:rgba(0,212,255,.07);border-left:2px solid var(--accent);}
+.sl{flex:1;min-width:0;}
+.sym-row{display:flex;align-items:center;gap:5px;margin-bottom:2px;}
+.sym{font-family:'Syne',sans-serif;font-weight:700;font-size:12px;}
+.bo-tag{font-size:8px;background:rgba(0,229,160,.15);color:var(--green);
+  padding:1px 5px;border-radius:3px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.sname{font-size:10px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dots{display:flex;gap:2px;margin-top:4px;align-items:center;}
+.dot{width:4px;height:4px;border-radius:50%;}
+.dot.y{background:var(--green);} .dot.n{background:var(--border2);}
+.dot-lbl{font-size:9px;color:var(--text3);margin-left:3px;font-family:'JetBrains Mono',monospace;}
+.sr{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
+.spx{font-weight:700;font-size:11px;font-family:'JetBrains Mono',monospace;}
+.schg{font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;}
+.schg.up{background:rgba(0,229,160,.12);color:var(--green);}
+.schg.dn{background:rgba(255,77,106,.1);color:var(--red);}
+.sig-badge{font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;}
+.sig-sb{background:rgba(0,212,255,.12);color:var(--accent);}
+.sig-bs{background:rgba(0,229,160,.12);color:var(--green);}
+.sig-wt{background:rgba(245,184,0,.1);color:var(--gold);}
+.sig-dv{background:rgba(255,255,255,.05);color:var(--text3);}
+.empty{padding:28px;text-align:center;color:var(--text3);}
+.empty-ico{font-size:24px;margin-bottom:8px;}
+
+/* RIGHT PANEL */
+.right-col{display:flex;flex-direction:column;gap:12px;}
+
+/* ENTRY/EXIT PLAN */
+.plan-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;}
+.plan-head{padding:10px 14px;border-bottom:1px solid var(--border);
+  background:linear-gradient(90deg,rgba(0,229,160,.06),rgba(0,212,255,.03));
+  display:flex;align-items:center;justify-content:space-between;}
+.plan-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--green);}
+.plan-body{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 14px;}
+.plan-item{background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:10px 12px;text-align:center;}
+.plan-item.entry{border-color:rgba(0,212,255,.3);}
+.plan-item.stop{border-color:rgba(255,77,106,.3);}
+.plan-item.t1{border-color:rgba(0,229,160,.25);}
+.plan-item.t2{border-color:rgba(167,139,250,.25);}
+.pi-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.8px;font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.pi-val{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;}
+.pi-pct{font-size:10px;font-family:'JetBrains Mono',monospace;margin-top:2px;}
+.plan-rr{padding:8px 14px;border-top:1px solid var(--border);background:var(--surface2);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+.rr-item{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text3);}
+.rr-item strong{color:var(--text2);}
+
+/* CHART */
+.chart-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;}
+.chart-head{padding:12px 14px;border-bottom:1px solid var(--border);background:var(--surface2);
+  display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.ch-left{display:flex;align-items:center;gap:14px;}
+.ch-sym{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;}
+.ch-name{font-size:10px;color:var(--text3);margin-top:2px;}
+.ch-price{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;}
+.ch-chg{font-size:11px;font-weight:600;margin-top:2px;}
+.ch-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+.cond-chips{display:flex;gap:4px;flex-wrap:wrap;}
+.cc{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;
+  font-size:10px;font-weight:600;border:1px solid;font-family:'JetBrains Mono',monospace;}
+.cc.y{background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.35);color:var(--green);}
+.cc.n{background:rgba(255,255,255,.03);border-color:var(--border);color:var(--text3);}
+.ccd{width:4px;height:4px;border-radius:50%;background:currentColor;}
+.tv-link{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;
+  background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);color:var(--purple);
+  font-size:11px;font-weight:600;text-decoration:none;}
+.chart-body{padding:12px 14px;}
+.candle-wrap{position:relative;height:260px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px;cursor:crosshair;}
+#candleCanvas,#overlayCanvas{position:absolute;inset:0;width:100%;height:100%;}
+#overlayCanvas{pointer-events:none;}
+.chart-legend{display:flex;gap:12px;margin-bottom:8px;font-size:10px;
+  font-family:'JetBrains Mono',monospace;align-items:center;flex-wrap:wrap;}
+.leg-item{display:flex;align-items:center;gap:5px;color:var(--text2);}
+.leg-line{width:16px;height:2px;border-radius:1px;}
+.vol-wrap{position:relative;height:50px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:10px;}
+#volCanvas{position:absolute;inset:0;width:100%;height:100%;}
+.metrics-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:10px;}
+.metric{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 10px;}
+.ml{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;
+  font-family:'JetBrains Mono',monospace;margin-bottom:4px;}
+.mv{font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+
+/* LOGIC PANEL */
+.logic-panel{background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:12px;margin-bottom:6px;}
+.logic-title{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
+  color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
+.lrow{display:flex;align-items:flex-start;gap:8px;background:var(--surface);
+  border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-bottom:6px;}
+.lrow:last-child{margin-bottom:0;}
+.lrow.pass{border-left:3px solid var(--green);}
+.lrow.fail{border-left:3px solid var(--border2);}
+.lrow-info{flex:1;}
+.lrow-name{font-size:11px;font-weight:600;color:var(--text);font-family:'Syne',sans-serif;}
+.lrow-detail{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;
+  margin-top:2px;line-height:1.6;}
+.lrow-value{font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:700;flex-shrink:0;}
+.lrow-value.pass-val{color:var(--green);}
+.lrow-value.fail-val{color:var(--text3);}
+
+/* CHART LOADING */
+.chart-loading{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;background:var(--surface2);z-index:5;gap:10px;}
+.chart-loading.hidden{display:none;}
+.spinner{width:28px;height:28px;border-radius:50%;border:3px solid var(--border);
+  border-top-color:var(--accent);animation:spin .7s linear infinite;}
+.chart-loading-txt{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;}
+
+/* CHART TOOLTIP */
+.chart-tooltip{position:absolute;background:rgba(5,10,20,.95);color:var(--text);
+  border:1px solid var(--border2);border-radius:7px;padding:8px 10px;
+  font-size:10px;font-family:'JetBrains Mono',monospace;pointer-events:none;
+  display:none;z-index:10;line-height:1.8;white-space:nowrap;}
+
+@media(max-width:1100px){.layout{grid-template-columns:1fr}.stats-strip{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.stats-strip{grid-template-columns:repeat(2,1fr)}.plan-body{grid-template-columns:1fr 1fr}.metrics-grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="nav-logo" href="index.html">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#050a14" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+      </svg>
+    </div>
+    <div><div class="nav-brand">AKS <span>Wealthply</span></div>
+    <div class="nav-tag">VCP Scanner</div></div>
+  </a>
+  <div class="topbar-mid">
+    <div class="scan-pill">
+      <div class="sdot idle" id="scanDot"></div>
+      <span id="scanStatusText">Ready</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn btn-green" onclick="exportCSV()">↓ CSV</button>
+    <a class="btn" href="scanner-builder.html">🛠 Builder</a>
+    <a class="btn" href="my-scanners.html">📋 Scanners</a>
+    <a class="home-link" href="index.html">← Home</a>
+  </div>
+</div>
+
+<!-- SCANNER INFO BAR -->
+<div class="scanner-bar" id="scannerBar">
+  <span class="sbar-name" id="sbarName">No scanner loaded</span>
+  <span class="sbar-pill" id="sbarConds">—</span>
+  <span class="sbar-pill" id="sbarScore">—</span>
+  <div class="sbar-right">
+    <a class="btn" style="font-size:11px;padding:4px 10px;" href="scanner-builder.html">Change Scanner</a>
+  </div>
+</div>
+
+<!-- DATE BAR -->
+<div class="date-bar">
+  <span class="date-lbl">📅 Scan Date</span>
+  <input type="date" class="date-input" id="backtestDate">
+  <select class="date-input" id="dataPeriod" style="width:auto;">
+    <option value="6mo">6 Months data</option>
+    <option value="1y" selected>1 Year data</option>
+    <option value="2y">2 Years data</option>
+  </select>
+  <button class="btn btn-primary" id="runBtn" onclick="runScan()">▶ Run Scan</button>
+  <button class="btn btn-red" id="stopBtn" onclick="stopScan()" style="display:none;">⬛ Stop</button>
+  <span style="margin-left:auto;font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace" id="lastScanInfo">—</span>
+</div>
+
+<div class="main">
+
+  <!-- STATS -->
+  <div class="stats-strip">
+    <div class="stat"><div class="stat-bar"></div><div class="stat-l">Strong</div><div class="stat-v" id="s1">—</div><div class="stat-s">All conditions</div></div>
+    <div class="stat"><div class="stat-bar"></div><div class="stat-l">Breakout</div><div class="stat-v" id="s2">—</div><div class="stat-s">Volume confirm</div></div>
+    <div class="stat"><div class="stat-bar"></div><div class="stat-l">Watch</div><div class="stat-v" id="s3">—</div><div class="stat-s">75%+ conditions</div></div>
+    <div class="stat"><div class="stat-bar"></div><div class="stat-l">Developing</div><div class="stat-v" id="s4">—</div><div class="stat-s">50%+ conditions</div></div>
+    <div class="stat"><div class="stat-bar"></div><div class="stat-l">Scanned</div><div class="stat-v" id="s5">—</div><div class="stat-s">Total stocks</div></div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="prog-box" id="progBox">
+    <div class="prog-top">
+      <span class="prog-lbl">⚡ Scanning...</span>
+      <span class="prog-num" id="progNum">0 / 0</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+    <div class="prog-log" id="progLog"></div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filter-row">
+    <span class="flbl">Show:</span>
+    <button class="ftab on" onclick="doFilter('all',this)">All</button>
+    <button class="ftab" onclick="doFilter('strong',this)">★ Strong</button>
+    <button class="ftab" onclick="doFilter('breakout',this)">🚀 Breakout</button>
+    <button class="ftab" onclick="doFilter('watch',this)">👀 Watch</button>
+    <button class="ftab" onclick="doFilter('dev',this)">⏳ Developing</button>
+    <input class="sinput" type="text" id="searchBox" placeholder="🔍 Search..." style="width:160px;padding:5px 10px;" oninput="doSearch(this.value)">
+  </div>
+
+  <div class="layout">
+
+    <!-- STOCK LIST -->
+    <div class="list-card">
+      <div class="list-head">
+        <span class="list-title" id="listTitle">Results</span>
+        <span class="list-cnt" id="listCnt">0</span>
+      </div>
+      <div class="stock-list" id="stockList">
+        <div class="empty"><div class="empty-ico">📅</div>
+          <div>Scanner select karo → Date chuno → Run Scan</div></div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-col">
+
+      <!-- ENTRY/EXIT PLAN -->
+      <div class="plan-card" id="planCard" style="display:none;">
+        <div class="plan-head">
+          <span class="plan-title">📊 Entry / Exit Plan</span>
+          <span style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace" id="planSym">—</span>
+        </div>
+        <div class="plan-body">
+          <div class="plan-item entry">
+            <div class="pi-lbl">Entry Zone</div>
+            <div class="pi-val" id="piEntry" style="color:var(--accent)">—</div>
+            <div class="pi-pct" id="piEntryNote" style="color:var(--text3)">—</div>
+          </div>
+          <div class="plan-item stop">
+            <div class="pi-lbl">Stop Loss</div>
+            <div class="pi-val" id="piStop" style="color:var(--red)">—</div>
+            <div class="pi-pct" id="piStopPct" style="color:var(--red)">—</div>
+          </div>
+          <div class="plan-item t1">
+            <div class="pi-lbl">Target 1</div>
+            <div class="pi-val" id="piT1" style="color:var(--green)">—</div>
+            <div class="pi-pct" id="piT1Pct" style="color:var(--green)">—</div>
+          </div>
+          <div class="plan-item t2">
+            <div class="pi-lbl">Target 2</div>
+            <div class="pi-val" id="piT2" style="color:var(--purple)">—</div>
+            <div class="pi-pct" id="piT2Pct" style="color:var(--purple)">—</div>
+          </div>
+        </div>
+        <div class="plan-rr">
+          <span class="rr-item">R:R T1 <strong id="rrT1">—</strong></span>
+          <span class="rr-item">R:R T2 <strong id="rrT2">—</strong></span>
+          <span class="rr-item">Pos size <strong id="posSz">—</strong></span>
+          <span class="rr-item">ATR10 <strong id="planAtr">—</strong></span>
+        </div>
+      </div>
+
+      <!-- CHART -->
+      <div class="chart-card">
+        <div class="chart-head">
+          <div class="ch-left">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="ch-sym" id="chSym">—</span>
+              </div>
+              <div class="ch-name" id="chName">Stock select karo list se</div>
+            </div>
+            <div>
+              <div class="ch-price" id="chPrice">—</div>
+              <div class="ch-chg" id="chChg" style="color:var(--text3)">—</div>
+            </div>
+          </div>
+          <div class="ch-right">
+            <a id="tvLink" class="tv-link" href="#" target="_blank" style="display:none;">📊 TradingView</a>
+            <div class="cond-chips" id="condChips"></div>
+          </div>
+        </div>
+        <div class="chart-body">
+          <div class="chart-legend">
+            <div class="leg-item"><div class="leg-line" style="background:var(--accent)"></div>Price</div>
+            <div class="leg-item"><div class="leg-line" style="border-top:2px dashed var(--gold);background:transparent"></div>MA20</div>
+            <div class="leg-item"><div class="leg-line" style="border-top:2px dashed var(--purple);background:transparent"></div>MA50</div>
+            <div class="leg-item"><div class="leg-line" style="border-top:2px dashed var(--red);background:transparent"></div>MA200</div>
+            <span style="margin-left:auto;font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace" id="xhairInfo"></span>
+          </div>
+          <div class="candle-wrap" id="candleWrap">
+            <canvas id="candleCanvas"></canvas>
+            <canvas id="overlayCanvas"></canvas>
+            <div class="chart-tooltip" id="tooltip"></div>
+            <div class="chart-loading" id="chartLoading">
+              <div class="spinner"></div>
+              <div class="chart-loading-txt">Loading chart...</div>
+            </div>
+          </div>
+          <div class="vol-wrap"><canvas id="volCanvas"></canvas></div>
+          <div class="metrics-grid" id="metricsGrid"></div>
+          <div class="logic-panel" id="logicPanel" style="display:none;">
+            <div class="logic-title">🔬 Logic Verification — VCP Conditions</div>
+            <div id="logicRows"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════
+const API = 'http://localhost:5000/api';
+
+// ── State ─────────────────────────────────────────────────────
+let allData=[], shown=[], chartData=[];
+let activeFilter='all', searchQ='';
+let currentSym=null, currentStock=null;
+let isDragging=false, dragStart=0, viewStart=0, viewLen=80;
+let cCanvas,oCanvas,cCtx,oCtx,vCanvas,vCtx;
+let pollTimer=null;
+let activeScannerCfg = null; // scanner config loaded from localStorage
+
+// ── Canvas refs ───────────────────────────────────────────────
+function initCanvas(){
+  cCanvas=document.getElementById('candleCanvas');
+  oCanvas=document.getElementById('overlayCanvas');
+  vCanvas=document.getElementById('volCanvas');
+  if(!cCanvas) return;
+  cCtx=cCanvas.getContext('2d'); oCtx=oCanvas.getContext('2d'); vCtx=vCanvas.getContext('2d');
+  const wrap=document.getElementById('candleWrap');
+  const resize=()=>{
+    const dpr=window.devicePixelRatio||1;
+    [cCanvas,oCanvas].forEach(c=>{
+      c.width=wrap.clientWidth*dpr; c.height=wrap.clientHeight*dpr;
+      c.style.width=wrap.clientWidth+'px'; c.style.height=wrap.clientHeight+'px';
+    });
+    [cCtx,oCtx].forEach(ctx=>ctx.scale(dpr,dpr));
+    const vp=vCanvas.parentElement;
+    vCanvas.width=vp.clientWidth*dpr; vCanvas.height=vp.clientHeight*dpr;
+    vCanvas.style.width=vp.clientWidth+'px'; vCanvas.style.height=vp.clientHeight+'px';
+    vCtx.scale(dpr,dpr);
+    if(chartData.length) drawAll();
+  };
+  resize(); window.addEventListener('resize',resize); setupMouse();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCANNER LOADER — reads ?scanner_id from URL → localStorage
+// ═══════════════════════════════════════════════════════════════
+function loadScannerFromURL(){
+  const params = new URLSearchParams(window.location.search);
+  const sid = params.get('scanner_id');
+  if(!sid){ showNoScanner(); return; }
+
+  const all = JSON.parse(localStorage.getItem('aks_scanners')||'[]');
+  const cfg = all.find(s=>s.id===sid);
+  if(!cfg){ showNoScanner(); return; }
+
+  activeScannerCfg = cfg;
+  // Update scanner info bar
+  document.getElementById('sbarName').textContent = cfg.name;
+  const activeConds = Object.values(cfg.conditions||{}).filter(v=>v.active).length;
+  document.getElementById('sbarConds').textContent = activeConds + ' conditions';
+  document.getElementById('sbarScore').textContent = 'Min score: ' + (cfg.minScore||2);
+  document.title = `AKS Wealthply — ${cfg.name}`;
+}
+
+function showNoScanner(){
+  document.getElementById('sbarName').textContent = '⚠ No scanner selected';
+  document.getElementById('stockList').innerHTML=`
+    <div class="empty">
+      <div class="empty-ico">🛠</div>
+      <div>Pehle scanner banao ya select karo</div>
+      <div style="margin-top:10px;">
+        <a href="scanner-builder.html" style="color:var(--accent);font-size:12px;">→ Scanner Builder open karo</a>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DATE INIT
+// ═══════════════════════════════════════════════════════════════
+function initDate(){
+  const d=new Date(); d.setDate(d.getDate()-1);
+  if(d.getDay()===0) d.setDate(d.getDate()-2);
+  if(d.getDay()===6) d.setDate(d.getDate()-1);
+  const picker=document.getElementById('backtestDate');
+  picker.value=d.toISOString().slice(0,10);
+  picker.max=new Date().toISOString().slice(0,10);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RUN SCAN
+// ═══════════════════════════════════════════════════════════════
+async function runScan(){
+  if(!activeScannerCfg){
+    alert('Pehle scanner-builder.html se scanner banao aur select karo!');
+    return;
+  }
+  const endDate = document.getElementById('backtestDate').value;
+  const period  = document.getElementById('dataPeriod').value;
+  if(!endDate){ alert('Date select karo!'); return; }
+
+  // Build watchlist: scanner-builder ke symbols OR prompt user
+  const watchlist = getWatchlist();
+  if(!watchlist.length){ alert('Watchlist empty hai! scanner-builder mein stocks add karo.'); return; }
+
+  // UI reset
+  allData=[]; shown=[];
+  document.getElementById('stockList').innerHTML='';
+  document.getElementById('planCard').style.display='none';
+  document.getElementById('logicPanel').style.display='none';
+  document.getElementById('progBox').style.display='block';
+  document.getElementById('progFill').style.width='0%';
+  document.getElementById('progLog').innerHTML='';
+  document.getElementById('progNum').textContent=`0 / ${watchlist.length}`;
+  document.getElementById('runBtn').disabled=true;
+  document.getElementById('stopBtn').style.display='inline-flex';
+  updateDot('running','Scanning...');
+
+  try{
+    const resp = await fetch(`${API}/scan`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        symbols:    watchlist,
+        end_date:   endDate,
+        period:     period,
+        scanner_id: activeScannerCfg.id,
+        config:     activeScannerCfg
+      })
+    });
+    if(!resp.ok) throw new Error('Backend error '+resp.status);
+    startPoll();
+  }catch(e){
+    alert('Backend chal nahi raha!\n\n python vcp_scanner.py chalao\n phir dobara try karo.');
+    resetRunUI();
+  }
+}
+
+async function stopScan(){
+  await fetch(`${API}/stop`,{method:'POST'}).catch(()=>{});
+  resetRunUI();
+}
+
+function startPoll(){
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async()=>{
+    try{
+      const prog = await fetch(`${API}/progress`).then(r=>r.json());
+      if(prog.total>0){
+        const pct=(prog.progress/prog.total*100).toFixed(1);
+        document.getElementById('progFill').style.width=pct+'%';
+        document.getElementById('progNum').textContent=`${prog.progress} / ${prog.total}`;
+        if(prog.log?.length){
+          const logEl=document.getElementById('progLog');
+          logEl.innerHTML=prog.log.map(l=>{
+            if(l.includes('✅')) return `<div class="pl-hit">${l}</div>`;
+            if(l.includes('✗'))  return `<div class="pl-err">${l}</div>`;
+            return `<div>${l}</div>`;
+          }).join('');
+          logEl.scrollTop=logEl.scrollHeight;
+        }
+      }
+      if(!prog.running){
+        clearInterval(pollTimer);
+        await loadResults();
+        resetRunUI();
+        updateDot('done','Scan complete');
+        setTimeout(()=>document.getElementById('progBox').style.display='none',3000);
+      }
+    }catch(e){}
+  },1200);
+}
+
+async function loadResults(){
+  if(!activeScannerCfg) return;
+  const endDate=document.getElementById('backtestDate').value;
+  const url=`${API}/results?scanner_id=${activeScannerCfg.id}&end_date=${endDate}`;
+  try{
+    const d=await fetch(url).then(r=>r.json());
+    allData=d.results||[];
+    document.getElementById('lastScanInfo').textContent=
+      `Last scan: ${endDate} | ${d.matched||0} matched / ${d.total||0} total`;
+    document.getElementById('listTitle').textContent=`Results (${endDate})`;
+    document.getElementById('s5').textContent=d.total||0;
+    updateStats(); applyFilter();
+    if(allData.length) selectStock(allData[0]);
+  }catch(e){}
+}
+
+function resetRunUI(){
+  document.getElementById('runBtn').disabled=false;
+  document.getElementById('stopBtn').style.display='none';
+  updateDot('idle','Ready');
+}
+
+// ── Watchlist from scanner config (or localStorage fallback) ──
+function getWatchlist(){
+  if(activeScannerCfg?.watchlist?.length) return activeScannerCfg.watchlist;
+  // Fallback: check global watchlist key
+  const wl=localStorage.getItem('aks_global_watchlist');
+  if(wl) return JSON.parse(wl);
+  return [];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHART DRAWING
+// ═══════════════════════════════════════════════════════════════
+function drawAll(){
+  if(!chartData.length||!cCtx) return;
+  const W=cCanvas.clientWidth,H=cCanvas.clientHeight;
+  const P={top:18,right:64,bottom:26,left:10};
+  const iW=W-P.left-P.right,iH=H-P.top-P.bottom;
+  const start=Math.max(0,Math.min(viewStart,chartData.length-viewLen));
+  viewStart=start;
+  const slice=chartData.slice(start,start+viewLen);
+  if(!slice.length) return;
+  const maxH=Math.max(...slice.map(d=>d.high))*1.002;
+  const minL=Math.min(...slice.map(d=>d.low))*0.998;
+  const range=maxH-minL||1;
+  const maxV=Math.max(...slice.map(d=>d.volume))||1;
+  const toY=v=>P.top+iH-(v-minL)/range*iH;
+  const toX=i=>P.left+(i+0.5)/viewLen*iW;
+  cCtx.clearRect(0,0,W,H);
+  // Grid
+  cCtx.strokeStyle='rgba(26,45,70,.8)';cCtx.lineWidth=1;
+  for(let i=1;i<5;i++){
+    const y=P.top+iH/5*i;
+    cCtx.beginPath();cCtx.moveTo(P.left,y);cCtx.lineTo(W-P.right,y);cCtx.stroke();
+    const val=maxH-(maxH-minL)/5*i;
+    cCtx.fillStyle='#4d6a89';cCtx.font='9px JetBrains Mono';cCtx.textAlign='left';
+    cCtx.fillText('₹'+val.toFixed(0),W-P.right+4,y+3);
+  }
+  // X labels
+  cCtx.fillStyle='#4d6a89';cCtx.font='9px JetBrains Mono';cCtx.textAlign='center';
+  const step=Math.max(1,Math.floor(viewLen/8));
+  slice.forEach((d,i)=>{if(i%step===0)cCtx.fillText(d.date?.slice(5)||'',toX(i),H-6);});
+  // MA lines
+  const drawMA=(period,color,dash=[])=>{
+    const cls=chartData.slice(0,start+viewLen).map(d=>d.close);
+    cCtx.beginPath();cCtx.strokeStyle=color;cCtx.lineWidth=1.5;cCtx.setLineDash(dash);
+    let ok=false;
+    slice.forEach((d,i)=>{
+      const gi=start+i;if(gi<period-1)return;
+      const avg=chartData.slice(gi-period+1,gi+1).reduce((a,b)=>a+b.close,0)/period;
+      const x=toX(i),y=toY(avg);
+      if(!ok){cCtx.moveTo(x,y);ok=true;}else cCtx.lineTo(x,y);
+    });
+    cCtx.stroke();cCtx.setLineDash([]);
+  };
+  drawMA(20,'#f5b800',[3,3]);drawMA(50,'#a78bfa',[5,3]);drawMA(200,'#ff4d6a',[7,3]);
+  // Pivot line
+  if(currentStock?.pivot_high){
+    const py=toY(currentStock.pivot_high);
+    if(py>P.top&&py<H-P.bottom){
+      cCtx.strokeStyle='rgba(0,229,160,.5)';cCtx.lineWidth=1;cCtx.setLineDash([4,4]);
+      cCtx.beginPath();cCtx.moveTo(P.left,py);cCtx.lineTo(W-P.right,py);cCtx.stroke();
+      cCtx.setLineDash([]);
+      cCtx.fillStyle='#00e5a0';cCtx.font='9px JetBrains Mono';cCtx.textAlign='left';
+      cCtx.fillText('PIVOT',W-P.right+4,py+3);
+    }
+  }
+  // Candles
+  const cW=Math.max(2,iW/viewLen*0.65);
+  slice.forEach((d,i)=>{
+    const x=toX(i),isUp=d.close>=d.open;
+    const color=isUp?'#00e5a0':'#ff4d6a';
+    const oY=toY(d.open),cY=toY(d.close),hY=toY(d.high),lY=toY(d.low);
+    cCtx.strokeStyle=color+'99';cCtx.lineWidth=1;
+    cCtx.beginPath();cCtx.moveTo(x,hY);cCtx.lineTo(x,lY);cCtx.stroke();
+    const bT=Math.min(oY,cY),bH=Math.max(1.5,Math.abs(oY-cY));
+    cCtx.fillStyle=isUp?'rgba(0,229,160,.15)':'rgba(255,77,106,.2)';
+    cCtx.fillRect(x-cW/2,bT,cW,bH);
+    cCtx.strokeStyle=color;cCtx.lineWidth=1.2;cCtx.strokeRect(x-cW/2,bT,cW,bH);
+  });
+  // Volume
+  const vW=vCanvas.clientWidth,vH=vCanvas.clientHeight;
+  vCtx.clearRect(0,0,vW,vH);
+  const vcW=Math.max(1.5,iW/viewLen*0.65);
+  slice.forEach((d,i)=>{
+    const isUp=d.close>=d.open,x=P.left+(i+0.5)/viewLen*iW;
+    const bH=(d.volume/maxV)*(vH-6);
+    vCtx.fillStyle=isUp?'rgba(0,229,160,.35)':'rgba(255,77,106,.3)';
+    vCtx.fillRect(x-vcW/2,vH-bH,vcW,bH);
+  });
+  vCtx.fillStyle='#4d6a89';vCtx.font='9px JetBrains Mono';vCtx.textAlign='right';
+  vCtx.fillText('VOL',vW-4,10);
+}
+
+function setupMouse(){
+  const wrap=document.getElementById('candleWrap');
+  wrap.addEventListener('mousedown',e=>{isDragging=true;dragStart=e.clientX;});
+  wrap.addEventListener('mousemove',e=>{
+    if(isDragging){
+      const dx=e.clientX-dragStart,bpp=viewLen/wrap.clientWidth;
+      viewStart=Math.max(0,Math.min(Math.round(viewStart-dx*bpp),chartData.length-viewLen));
+      dragStart=e.clientX;drawAll();
+    }
+    drawCross(e.offsetX,e.offsetY);
+  });
+  wrap.addEventListener('mouseup',()=>isDragging=false);
+  wrap.addEventListener('mouseleave',()=>{
+    isDragging=false;
+    oCtx?.clearRect(0,0,oCanvas.clientWidth,oCanvas.clientHeight);
+    document.getElementById('tooltip').style.display='none';
+  });
+  wrap.addEventListener('wheel',e=>{
+    e.preventDefault();
+    viewLen=Math.max(20,Math.min(200,viewLen+(e.deltaY>0?8:-8)));
+    viewStart=Math.max(0,Math.min(viewStart,chartData.length-viewLen));
+    drawAll();
+  },{passive:false});
+}
+
+function drawCross(mx,my){
+  if(!oCtx||!chartData.length) return;
+  const W=oCanvas.clientWidth,H=oCanvas.clientHeight;
+  const P={top:18,right:64,bottom:26,left:10};
+  const iW=W-P.left-P.right,iH=H-P.top-P.bottom;
+  oCtx.clearRect(0,0,W,H);
+  oCtx.strokeStyle='rgba(0,212,255,.3)';oCtx.lineWidth=1;oCtx.setLineDash([4,4]);
+  oCtx.beginPath();oCtx.moveTo(mx,P.top);oCtx.lineTo(mx,H-P.bottom);oCtx.stroke();
+  oCtx.beginPath();oCtx.moveTo(P.left,my);oCtx.lineTo(W-P.right,my);oCtx.stroke();
+  oCtx.setLineDash([]);
+  const i=Math.floor((mx-P.left)/iW*viewLen);
+  const bar=chartData[viewStart+i];
+  if(bar){
+    const tp=document.getElementById('tooltip');
+    tp.style.display='block';tp.style.left=(mx+12)+'px';tp.style.top=(my-10)+'px';
+    tp.innerHTML=`<b>${bar.date}</b><br>O ₹${bar.open} H ₹${bar.high}<br>L ₹${bar.low} C ₹${bar.close}<br>Vol ${(bar.volume/1e5).toFixed(1)}L`;
+    const maxH=Math.max(...chartData.slice(viewStart,viewStart+viewLen).map(d=>d.high))*1.002;
+    const minL=Math.min(...chartData.slice(viewStart,viewStart+viewLen).map(d=>d.low))*0.998;
+    document.getElementById('xhairInfo').textContent='₹'+(maxH-(my-P.top)/iH*(maxH-minL)).toFixed(2);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STATS / FILTER / RENDER
+// ═══════════════════════════════════════════════════════════════
+function updateStats(){
+  const fl=(id,v)=>{const e=document.getElementById(id);e.textContent=v;e.classList.add('flash');setTimeout(()=>e.classList.remove('flash'),600);};
+  const total=allData[0]?.total_conditions||4;
+  fl('s1',allData.filter(r=>r.score_raw===r.total_conditions).length);
+  fl('s2',allData.filter(r=>r.breakout).length);
+  fl('s3',allData.filter(r=>r.score_raw>=r.total_conditions*.75&&r.score_raw<r.total_conditions).length);
+  fl('s4',allData.filter(r=>r.score_raw>=r.total_conditions*.5&&r.score_raw<r.total_conditions*.75).length);
+}
+
+function doFilter(type,btn){
+  activeFilter=type;searchQ='';
+  document.getElementById('searchBox').value='';
+  document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');applyFilter();
+}
+function doSearch(q){searchQ=q.toLowerCase();applyFilter();}
+function applyFilter(){
+  let r=[...allData];
+  const tot=r[0]?.total_conditions||4;
+  if(activeFilter==='strong') r=r.filter(x=>x.score_raw===x.total_conditions);
+  else if(activeFilter==='breakout') r=r.filter(x=>x.breakout);
+  else if(activeFilter==='watch') r=r.filter(x=>x.score_raw>=x.total_conditions*.75&&x.score_raw<x.total_conditions);
+  else if(activeFilter==='dev') r=r.filter(x=>x.score_raw>=x.total_conditions*.5&&x.score_raw<x.total_conditions*.75);
+  if(searchQ) r=r.filter(x=>x.symbol.toLowerCase().includes(searchQ));
+  shown=r;renderList();
+  if(shown.length){
+    const found=currentSym?shown.find(s=>s.symbol===currentSym):null;
+    selectStock(found||shown[0]);
+  }
+}
+
+function sigClass(s){
+  if(!s) return 'sig-dv';
+  if(s.includes('STRONG')||s.includes('Breakout')) return 'sig-sb';
+  if(s.includes('BUY')) return 'sig-bs';
+  if(s.includes('WATCH')) return 'sig-wt';
+  return 'sig-dv';
+}
+
+function renderList(){
+  const el=document.getElementById('stockList');
+  document.getElementById('listCnt').textContent=shown.length;
+  if(!shown.length){
+    el.innerHTML='<div class="empty"><div class="empty-ico">🔍</div><div>No results</div></div>';
+    return;
+  }
+  el.innerHTML=shown.map((s,i)=>{
+    const total=s.total_conditions||4;
+    const dots=[s.cond1_uptrend,s.cond2_atr,s.cond3_volume,s.cond4_range,s.cond5_pivot,s.cond6_52w]
+      .slice(0,total).map(c=>`<div class="dot ${c?'y':'n'}"></div>`).join('');
+    const isOn=s.symbol===currentSym;
+    const chg=s.change_pct||0;
+    return `<div class="srow${isOn?' on':''}" onclick="rowClick(this,${i})">
+      <div class="sl">
+        <div class="sym-row">
+          <span class="sym">${s.symbol}</span>
+          ${s.breakout?'<span class="bo-tag">BO</span>':''}
+        </div>
+        <div class="sname">${s.signal||''}</div>
+        <div class="dots">${dots}<span class="dot-lbl">${s.score_raw}/${total}</span></div>
+      </div>
+      <div class="sr">
+        <span class="spx">₹${(s.price||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</span>
+        <span class="schg ${chg>=0?'up':'dn'}">${chg>=0?'+':''}${chg}%</span>
+        <span class="sig-badge ${sigClass(s.signal)}">${(s.signal||'').split('—')[0].trim()}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function rowClick(el,i){
+  document.querySelectorAll('.srow').forEach(r=>r.classList.remove('on'));
+  el.classList.add('on');selectStock(shown[i]);currentSym=shown[i].symbol;
+}
+
+function selectStock(s){
+  if(!s)return;
+  currentStock=s;currentSym=s.symbol;
+  document.getElementById('chSym').textContent=s.symbol;
+  document.getElementById('chName').textContent=`${s.name||s.symbol} · ${s.score_raw}/${s.total_conditions}`;
+  document.getElementById('chPrice').textContent=`₹${(s.price||0).toLocaleString('en-IN',{maximumFractionDigits:2})}`;
+  const chgEl=document.getElementById('chChg');
+  const chg=s.change_pct||0;
+  chgEl.textContent=`${chg>=0?'▲ +':'▼ '}${chg}%`;
+  chgEl.style.color=chg>=0?'var(--green)':'var(--red)';
+  document.getElementById('tvLink').href=s.tv_link||`https://www.tradingview.com/chart/?symbol=NSE:${s.symbol}`;
+  document.getElementById('tvLink').style.display='inline-flex';
+  const cnames=['① Uptrend','② ATR↓','③ Vol↓','④ Range↓','⑤ Pivot','⑥ 52W'];
+  const cvals=[s.cond1_uptrend,s.cond2_atr,s.cond3_volume,s.cond4_range,s.cond5_pivot,s.cond6_52w];
+  document.getElementById('condChips').innerHTML=cvals.slice(0,s.total_conditions||4).map((c,i)=>
+    `<div class="cc ${c?'y':'n'}"><div class="ccd"></div>${cnames[i]}</div>`).join('');
+  document.getElementById('metricsGrid').innerHTML=[
+    ['ATR(10)',`₹${s.atr10||0}`,'var(--accent)'],
+    ['ATR(20)',`₹${s.atr20||0}`,'var(--orange)'],
+    ['Vol×',`${s.vol_ratio||0}×`,(s.vol_ratio||1)<0.8?'var(--green)':'var(--text)'],
+    ['Pivot',`₹${s.pivot_high||0}`,'var(--gold)'],
+    ['Dist',`${s.from_pivot||0}%`,'var(--purple)'],
+  ].map(([l,v,c])=>`<div class="metric"><div class="ml">${l}</div><div class="mv" style="color:${c}">${v}</div></div>`).join('');
+  renderPlan(s);
+  renderLogic(s);
+  if(s.bars?.length){
+    chartData=s.bars;viewLen=Math.min(80,chartData.length);
+    viewStart=Math.max(0,chartData.length-viewLen);
+    document.getElementById('chartLoading').classList.add('hidden');
+    drawAll();
+  }
+}
+
+// ── Entry/Exit Plan ───────────────────────────────────────────
+function renderPlan(s){
+  const atr=s.atr10||s.price*0.02;
+  const entry=+(s.from_pivot<3?s.price:Math.min(s.pivot_high*1.01,s.price*1.005)).toFixed(2);
+  const stop=+(entry-2*atr).toFixed(2);
+  const risk=entry-stop;
+  const t1=+(entry+risk*2).toFixed(2);
+  const t2=+(entry+risk*4).toFixed(2);
+  const sp=-((entry-stop)/entry*100).toFixed(2);
+  const t1p=+((t1-entry)/entry*100).toFixed(2);
+  const t2p=+((t2-entry)/entry*100).toFixed(2);
+  const rrT1=risk>0?`1:${(t1p/Math.abs(sp)).toFixed(1)}`:'—';
+  const rrT2=risk>0?`1:${(t2p/Math.abs(sp)).toFixed(1)}`:'—';
+  const shares=risk>0?Math.floor(5000/risk):0;
+  document.getElementById('planCard').style.display='block';
+  document.getElementById('planSym').textContent=s.symbol;
+  document.getElementById('piEntry').textContent=`₹${entry.toLocaleString('en-IN',{maximumFractionDigits:2})}`;
+  document.getElementById('piEntryNote').textContent=s.from_pivot<3?'Breakout zone!':'Pivot se '+s.from_pivot+'% neeche';
+  document.getElementById('piStop').textContent=`₹${stop.toLocaleString('en-IN',{maximumFractionDigits:2})}`;
+  document.getElementById('piStopPct').textContent=`${sp}%`;
+  document.getElementById('piT1').textContent=`₹${t1.toLocaleString('en-IN',{maximumFractionDigits:2})}`;
+  document.getElementById('piT1Pct').textContent=`+${t1p}%`;
+  document.getElementById('piT2').textContent=`₹${t2.toLocaleString('en-IN',{maximumFractionDigits:2})}`;
+  document.getElementById('piT2Pct').textContent=`+${t2p}%`;
+  document.getElementById('rrT1').textContent=rrT1;
+  document.getElementById('rrT2').textContent=rrT2;
+  document.getElementById('posSz').textContent=shares>0?`${shares} sh (₹${(shares*entry).toLocaleString('en-IN',{maximumFractionDigits:0})})`:'—';
+  document.getElementById('planAtr').textContent=`₹${s.atr10||0}`;
+}
+
+// ── Logic Verification ────────────────────────────────────────
+function renderLogic(s){
+  const panel=document.getElementById('logicPanel');
+  panel.style.display='block';
+  const rows=[
+    {name:'① Uptrend (Price > MA50 > MA200)',pass:s.cond1_uptrend,detail:s.c1_detail||'—'},
+    {name:'② ATR Contraction',               pass:s.cond2_atr,    detail:s.c2_detail||'—'},
+    {name:'③ Volume Dry-up',                  pass:s.cond3_volume, detail:s.c3_detail||'—'},
+    {name:'④ Range Tightening',               pass:s.cond4_range,  detail:s.c4_detail||'—'},
+  ].filter((_,i)=>i<(s.total_conditions||4));
+  document.getElementById('logicRows').innerHTML=rows.map(r=>`
+    <div class="lrow ${r.pass?'pass':'fail'}">
+      <div class="lrow-info">
+        <div class="lrow-name">${r.name}</div>
+        <div class="lrow-detail">${r.detail}</div>
+      </div>
+      <div class="lrow-value ${r.pass?'pass-val':'fail-val'}">${r.pass?'PASS':'FAIL'}</div>
+    </div>`).join('');
+}
+
+// ── CSV Export ────────────────────────────────────────────────
+function exportCSV(){
+  if(!allData.length){alert('Pehle scan karo!');return;}
+  const date=document.getElementById('backtestDate').value;
+  const h=['Symbol','Score','Total','Signal','Price','Change%','MA50','MA200',
+    'ATR10','Vol×','Pivot','FromPivot%','Breakout','TV Link'];
+  const r=allData.map(s=>[s.symbol,s.score_raw,s.total_conditions,`"${s.signal}"`,
+    s.price,s.change_pct,s.ma50,s.ma200,s.atr10,s.vol_ratio,s.pivot_high,s.from_pivot,
+    s.breakout?'Y':'N',s.tv_link]);
+  const csv=[h,...r].map(row=>row.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download=`AKS_Scan_${date}.csv`;a.click();
+}
+
+// ── Dot status ────────────────────────────────────────────────
+function updateDot(state,text){
+  const d=document.getElementById('scanDot');
+  d.className='sdot '+state;
+  document.getElementById('scanStatusText').textContent=text;
+}
+
+// ── Init ──────────────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  initCanvas();
+  document.getElementById('chartLoading').classList.add('hidden');
+  initDate();
+  loadScannerFromURL();
+});
+</script>
+</body>
+</html>

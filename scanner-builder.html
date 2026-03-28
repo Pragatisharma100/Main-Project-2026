@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scanner Builder — AKS Wealthply</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050a14;--surface:#0c1524;--accent:#00d4ff;--green:#00e5a0;}
+body{background:var(--bg);color:#f0f6ff;font-family:'DM Sans',sans-serif;padding:20px;}
+h1{font-family:'Syne',sans-serif;color:var(--accent);}
+.card{background:var(--surface);border:1px solid #1a2d46;border-radius:12px;padding:24px;max-width:900px;margin:20px auto;}
+input, select, button{padding:10px;margin:8px 0;border-radius:8px;border:1px solid #243b58;background:#111e30;color:#f0f6ff;width:100%;}
+.btn-primary{background:linear-gradient(135deg,#00d4ff,#0ea5e9);color:#050a14;font-weight:700;border:none;padding:12px;}
+.watchlist{display:flex;gap:8px;flex-wrap:wrap;}
+.tag{background:#1a2d46;padding:6px 12px;border-radius:20px;font-size:13px;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>🛠 Scanner Builder</h1>
+  <input type="text" id="scannerName" placeholder="Scanner Name (e.g. Aggressive VCP)" value="My VCP Scanner">
+
+  <h3 style="margin-top:20px;">Conditions</h3>
+  <label><input type="checkbox" id="uptrend" checked> Uptrend (Price > MA50 > MA200)</label><br>
+  <label><input type="checkbox" id="atr" checked> ATR Contraction <input type="number" id="atrThresh" value="80" style="width:80px;"> %</label><br>
+  <label><input type="checkbox" id="vol" checked> Volume Dry-up <input type="number" id="volThresh" value="80" style="width:80px;"> %</label><br>
+  <label><input type="checkbox" id="range" checked> Range Tightening <input type="number" id="rangeThresh" value="75" style="width:80px;"> %</label><br>
+  <label><input type="checkbox" id="pivot"> Near Pivot <input type="number" id="pivotThresh" value="10" style="width:80px;"> %</label><br>
+  <label><input type="checkbox" id="52w"> Near 52W High <input type="number" id="52wThresh" value="20" style="width:80px;"> %</label><br>
+
+  <h3>Minimum Score</h3>
+  <select id="minScore">
+    <option value="1">1</option>
+    <option value="2" selected>2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+  </select>
+
+  <h3>Watchlist (one symbol per line)</h3>
+  <textarea id="watchlist" rows="8" style="width:100%;font-family:JetBrains Mono;">RELIANCE
+TCS
+HDFCBANK
+INFY
+ICICIBANK
+SBIN
+AXISBANK
+LT</textarea>
+
+  <button class="btn-primary" onclick="saveScanner()">Save Scanner</button>
+  <button onclick="window.location='my-scanners.html'" style="margin-left:10px;">View My Scanners</button>
+</div>
+
+<script>
+function saveScanner(){
+  const name = document.getElementById('scannerName').value || "Untitled Scanner";
+  const id = "scanner_" + Date.now();
+
+  const conditions = {
+    uptrend: {active: document.getElementById('uptrend').checked},
+    atr: {active: document.getElementById('atr').checked, threshold: parseInt(document.getElementById('atrThresh').value)},
+    vol: {active: document.getElementById('vol').checked, threshold: parseInt(document.getElementById('volThresh').value)},
+    range: {active: document.getElementById('range').checked, threshold: parseInt(document.getElementById('rangeThresh').value)},
+    pivot: {active: document.getElementById('pivot').checked, threshold: parseInt(document.getElementById('pivotThresh').value)},
+    "52w": {active: document.getElementById('52w').checked, threshold: parseInt(document.getElementById('52wThresh').value)}
+  };
+
+  const watchlist = document.getElementById('watchlist').value.trim().split('\n').map(s=>s.trim().toUpperCase()).filter(Boolean);
+
+  const scanners = JSON.parse(localStorage.getItem('aks_scanners') || '[]');
+  scanners.push({
+    id, name, minScore: parseInt(document.getElementById('minScore').value),
+    conditions, watchlist
+  });
+
+  localStorage.setItem('aks_scanners', JSON.stringify(scanners));
+  alert('Scanner saved successfully! You can now use it in the scanner.');
+  window.location = 'scanner.html?scanner_id=' + id;
+}
+</script>
+</body>
+</html>

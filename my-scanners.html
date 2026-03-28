@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Scanners — AKS Wealthply</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050a14;--surface:#0c1524;--accent:#00d4ff;}
+body{background:var(--bg);color:#f0f6ff;font-family:'DM Sans',sans-serif;padding:20px;}
+.card{background:var(--surface);border:1px solid #1a2d46;border-radius:12px;padding:20px;margin-bottom:15px;}
+.btn-delete{background:#ff4d6a;color:white;border:none;padding:8px 16px;border-radius:6px;}
+</style>
+</head>
+<body>
+
+<h1>📋 My Scanners</h1>
+<div id="scannersList"></div>
+
+<a href="scanner-builder.html" style="color:var(--accent);text-decoration:none;">+ Create New Scanner</a>
+
+<script>
+function loadScanners(){
+  const list = document.getElementById('scannersList');
+  const scanners = JSON.parse(localStorage.getItem('aks_scanners') || '[]');
+  
+  if(scanners.length === 0){
+    list.innerHTML = '<p style="color:#8fa8c4;">No scanners yet. Create one in Scanner Builder.</p>';
+    return;
+  }
+
+  list.innerHTML = scanners.map(s => `
+    <div class="card">
+      <strong>${s.name}</strong> (Min Score: ${s.minScore})<br>
+      <small style="color:#8fa8c4;">Watchlist: ${s.watchlist.length} stocks</small>
+      <div style="margin-top:12px;">
+        <button onclick="useScanner('${s.id}')" style="background:var(--accent);color:#050a14;padding:8px 16px;border:none;border-radius:6px;">Use in Scanner</button>
+        <button onclick="deleteScanner('${s.id}')" class="btn-delete">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function useScanner(id){
+  window.location = `scanner.html?scanner_id=${id}`;
+}
+
+function deleteScanner(id){
+  if(confirm('Delete this scanner?')){
+    let scanners = JSON.parse(localStorage.getItem('aks_scanners') || '[]');
+    scanners = scanners.filter(s => s.id !== id);
+    localStorage.setItem('aks_scanners', JSON.stringify(scanners));
+    loadScanners();
+  }
+}
+
+window.onload = loadScanners;
+</script>
+</body>
+</html>
